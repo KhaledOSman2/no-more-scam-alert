@@ -8,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { toast } from '@/hooks/use-toast';
 import { ImagePlus, Loader2, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useForm } from '@/hooks/use-form';
+import { getScammerFormValidation, validateContactMethod } from '@/lib/scammer-validation';
 
 interface FormValues {
   scammerName: string;
@@ -17,101 +19,35 @@ interface FormValues {
   scammerDetails: string;
   reporterName: string;
   reporterEmail: string;
-  scammerImage: File | null;
 }
 
 export const ReportForm: React.FC = () => {
-  const [formValues, setFormValues] = useState<FormValues>({
-    scammerName: '',
-    scammerPhone: '',
-    scammerEmail: '',
-    scammerSocial: '',
-    scammerDetails: '',
-    reporterName: '',
-    reporterEmail: '',
-    scammerImage: null
-  });
-  
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [scammerImage, setScammerImage] = useState<File | null>(null);
   const [currentStep, setCurrentStep] = useState(1);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormValues((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0] || null;
-    
-    if (file) {
-      setFormValues((prev) => ({ ...prev, scammerImage: file }));
+  
+  const formValidation = getScammerFormValidation();
+  
+  const { 
+    values, 
+    handleChange, 
+    handleSubmit, 
+    isSubmitting, 
+    reset 
+  } = useForm<FormValues>({
+    initialValues: {
+      scammerName: '',
+      scammerPhone: '',
+      scammerEmail: '',
+      scammerSocial: '',
+      scammerDetails: '',
+      reporterName: '',
+      reporterEmail: '',
+    },
+    onSubmit: async (values) => {
+      // In real applications, you would submit to your API here
+      console.log('Submitting form with values:', values, 'and image:', scammerImage);
       
-      // Create a preview URL
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      setFormValues((prev) => ({ ...prev, scammerImage: null }));
-      setImagePreview(null);
-    }
-  };
-
-  const clearImagePreview = () => {
-    setFormValues((prev) => ({ ...prev, scammerImage: null }));
-    setImagePreview(null);
-  };
-
-  const validateStep1 = () => {
-    if (!formValues.scammerName.trim()) {
-      toast({
-        title: "خطأ في النموذج",
-        description: "الرجاء إدخال اسم المحتال",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    if (!formValues.scammerDetails.trim()) {
-      toast({
-        title: "خطأ في النموذج",
-        description: "الرجاء إدخال تفاصيل عن عملية الإحتيال",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    // At least one contact method is required
-    if (!formValues.scammerPhone.trim() && !formValues.scammerEmail.trim() && !formValues.scammerSocial.trim()) {
-      toast({
-        title: "خطأ في النموذج",
-        description: "الرجاء إدخال طريقة تواصل واحدة على الأقل (هاتف، بريد إلكتروني، أو حساب تواصل اجتماعي)",
-        variant: "destructive"
-      });
-      return false;
-    }
-
-    return true;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // In step 1, validate and move to step 2
-    if (currentStep === 1) {
-      if (validateStep1()) {
-        setCurrentStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-      return;
-    }
-    
-    // In step 2, submit the form
-    setIsSubmitting(true);
-    
-    try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1500));
       
@@ -120,36 +56,86 @@ export const ReportForm: React.FC = () => {
         description: "شكرًا لمساهمتك في مكافحة الإحتيال. سنقوم بمراجعة البلاغ في أقرب وقت.",
       });
       
-      // Reset form
-      setFormValues({
-        scammerName: '',
-        scammerPhone: '',
-        scammerEmail: '',
-        scammerSocial: '',
-        scammerDetails: '',
-        reporterName: '',
-        reporterEmail: '',
-        scammerImage: null
-      });
+      // Reset form and state
+      reset();
       setImagePreview(null);
+      setScammerImage(null);
       setCurrentStep(1);
+    },
+    validations: formValidation
+  });
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] || null;
+    
+    if (file) {
+      setScammerImage(file);
       
-    } catch (error) {
-      toast({
-        title: "فشل في إرسال البلاغ",
-        description: "حدث خطأ أثناء إرسال البلاغ. الرجاء المحاولة مرة أخرى.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsSubmitting(false);
+      // Create a preview URL
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setScammerImage(null);
+      setImagePreview(null);
     }
   };
 
+  const clearImagePreview = () => {
+    setScammerImage(null);
+    setImagePreview(null);
+  };
+
+  const handleStepSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (currentStep === 1) {
+      // Validate required fields for step 1
+      if (!values.scammerName.trim()) {
+        toast({
+          title: "خطأ في النموذج",
+          description: "الرجاء إدخال اسم المحتال",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!values.scammerDetails.trim()) {
+        toast({
+          title: "خطأ في النموذج",
+          description: "الرجاء إدخال تفاصيل عن عملية الإحتيال",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Validate at least one contact method
+      if (!validateContactMethod(values)) {
+        toast({
+          title: "خطأ في النموذج",
+          description: "الرجاء إدخال طريقة تواصل واحدة على الأقل (هاتف، بريد إلكتروني، أو حساب تواصل اجتماعي)",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      // Move to step 2
+      setCurrentStep(2);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
+    // Handle the actual form submission
+    handleSubmit(e);
+  };
+
   return (
-    <Card className="shadow-card border-border/60 overflow-hidden">
+    <Card className="shadow-card border-border/60 overflow-hidden animate-fade-in">
       <div className="h-2 bg-primary" />
       <CardContent className="p-6 md:p-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleStepSubmit} className="space-y-6">
           <div className="text-right">
             <h2 className="text-2xl font-heading font-bold text-foreground">
               {currentStep === 1 ? 'الإبلاغ عن محتال' : 'معلومات المبلغ (اختياري)'}
@@ -170,7 +156,7 @@ export const ReportForm: React.FC = () => {
                 <Input
                   id="scammerName"
                   name="scammerName"
-                  value={formValues.scammerName}
+                  value={values.scammerName}
                   onChange={handleChange}
                   placeholder="الاسم الكامل للمحتال"
                   className="mt-1 text-right"
@@ -184,7 +170,7 @@ export const ReportForm: React.FC = () => {
                 <Input
                   id="scammerPhone"
                   name="scammerPhone"
-                  value={formValues.scammerPhone}
+                  value={values.scammerPhone}
                   onChange={handleChange}
                   placeholder="رقم هاتف المحتال"
                   className="mt-1 text-right"
@@ -198,7 +184,7 @@ export const ReportForm: React.FC = () => {
                   id="scammerEmail"
                   name="scammerEmail"
                   type="email"
-                  value={formValues.scammerEmail}
+                  value={values.scammerEmail}
                   onChange={handleChange}
                   placeholder="البريد الإلكتروني للمحتال"
                   className="mt-1 text-right"
@@ -211,7 +197,7 @@ export const ReportForm: React.FC = () => {
                 <Input
                   id="scammerSocial"
                   name="scammerSocial"
-                  value={formValues.scammerSocial}
+                  value={values.scammerSocial}
                   onChange={handleChange}
                   placeholder="رابط حساب فيسبوك، تويتر، انستغرام، الخ..."
                   className="mt-1 text-right"
@@ -224,7 +210,7 @@ export const ReportForm: React.FC = () => {
                 <Textarea
                   id="scammerDetails"
                   name="scammerDetails"
-                  value={formValues.scammerDetails}
+                  value={values.scammerDetails}
                   onChange={handleChange}
                   rows={5}
                   placeholder="اشرح طريقة الاحتيال وتفاصيل أخرى مهمة..."
@@ -300,7 +286,7 @@ export const ReportForm: React.FC = () => {
                 <Input
                   id="reporterName"
                   name="reporterName"
-                  value={formValues.reporterName}
+                  value={values.reporterName}
                   onChange={handleChange}
                   placeholder="اسمك"
                   className="mt-1 text-right"
@@ -314,7 +300,7 @@ export const ReportForm: React.FC = () => {
                   id="reporterEmail"
                   name="reporterEmail"
                   type="email"
-                  value={formValues.reporterEmail}
+                  value={values.reporterEmail}
                   onChange={handleChange}
                   placeholder="بريدك الإلكتروني للتواصل عند الحاجة"
                   className="mt-1 text-right"
