@@ -96,7 +96,7 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers: in
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 AdminScammerList">
       <div className="flex items-center gap-3">
         <div className="relative flex-1">
           <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
@@ -110,7 +110,7 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers: in
             dir="rtl"
           />
         </div>
-        <Button onClick={handleAddScammer}>
+        <Button onClick={handleAddScammer} data-add-button="true">
           <Plus size={18} className="mr-1" />
           إضافة محتال
         </Button>

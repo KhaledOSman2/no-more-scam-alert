@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { MainLayout } from '@/layouts/MainLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AdminScammerList } from '@/components/AdminScammerList';
@@ -10,12 +10,25 @@ import { AlertTriangle, CheckCircle, Clock, FileBarChart, ListFilter, UserCheck,
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('scammers');
+  const addScammerButtonRef = useRef<HTMLButtonElement>(null);
   
   // Stats calculation
   const totalScammers = mockScammers.length;
   const verifiedScammers = mockScammers.filter(s => s.verified).length;
   const pendingReports = mockReports.filter(r => r.status === 'pending').length;
   const totalReports = mockReports.length;
+
+  // Handler for adding a new scammer
+  const handleAddScammerClick = () => {
+    setActiveTab('scammers');
+    // Use a timeout to ensure the tab change has completed before trying to access the button
+    setTimeout(() => {
+      const addButton = document.querySelector('.AdminScammerList [data-add-button="true"]') as HTMLButtonElement;
+      if (addButton) {
+        addButton.click();
+      }
+    }, 100);
+  };
 
   return (
     <MainLayout>
@@ -84,13 +97,7 @@ const Admin = () => {
         <div className="flex flex-wrap gap-3 mb-8">
           <button 
             className="inline-flex items-center bg-primary/10 hover:bg-primary/20 text-primary rounded-md px-4 py-2 text-sm font-medium transition-colors" 
-            onClick={() => {
-              setActiveTab('scammers');
-              // Trigger add scammer dialog after tab change
-              setTimeout(() => {
-                document.querySelector('.AdminScammerList [data-add-button="true"]')?.click();
-              }, 100);
-            }}
+            onClick={handleAddScammerClick}
           >
             <UserPlus size={16} className="ml-1.5" />
             إضافة محتال جديد
