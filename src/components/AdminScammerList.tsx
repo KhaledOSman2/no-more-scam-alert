@@ -3,17 +3,21 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Check, Edit, Search, Trash, X } from 'lucide-react';
+import { Check, Edit, Plus, Search, Trash, X } from 'lucide-react';
 import { ScammerData } from '@/components/ScammerCard';
 import { toast } from '@/hooks/use-toast';
+import { ScammerForm } from '@/components/ScammerForm';
 
 interface AdminScammerListProps {
   scammers: ScammerData[];
 }
 
-export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers }) => {
+export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers: initialScammers }) => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filteredScammers, setFilteredScammers] = useState<ScammerData[]>(scammers);
+  const [scammers, setScammers] = useState<ScammerData[]>(initialScammers);
+  const [filteredScammers, setFilteredScammers] = useState<ScammerData[]>(initialScammers);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingScammer, setEditingScammer] = useState<ScammerData | null>(null);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value.toLowerCase();
@@ -31,25 +35,64 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers }) 
     }
   };
 
-  const handleEdit = (id: string) => {
-    toast({
-      title: "تحرير المحتال",
-      description: `تم فتح نموذج تحرير المحتال برقم ${id}`,
-    });
+  const handleEdit = (scammer: ScammerData) => {
+    setEditingScammer(scammer);
+    setIsFormOpen(true);
   };
 
   const handleDelete = (id: string) => {
+    const updatedScammers = scammers.filter(scammer => scammer.id !== id);
+    setScammers(updatedScammers);
+    setFilteredScammers(updatedScammers);
+    
     toast({
-      title: "حذف المحتال",
-      description: `تم حذف المحتال برقم ${id}`,
+      title: "تم حذف المحتال",
+      description: `تم حذف المحتال برقم ${id} بنجاح`,
     });
   };
 
   const handleVerify = (id: string, currentStatus: boolean) => {
+    const updatedScammers = scammers.map(scammer => 
+      scammer.id === id 
+        ? { ...scammer, verified: !currentStatus } 
+        : scammer
+    );
+    
+    setScammers(updatedScammers);
+    setFilteredScammers(updatedScammers);
+    
     toast({
       title: currentStatus ? "إلغاء التحقق" : "تأكيد التحقق",
       description: `تم ${currentStatus ? 'إلغاء التحقق من' : 'تأكيد'} المحتال برقم ${id}`,
     });
+  };
+  
+  const handleAddScammer = () => {
+    setEditingScammer(null);
+    setIsFormOpen(true);
+  };
+  
+  const handleSaveScammer = (scammerData: Partial<ScammerData>) => {
+    let updatedScammers: ScammerData[];
+    
+    if (editingScammer) {
+      // Editing existing scammer
+      updatedScammers = scammers.map(scammer => 
+        scammer.id === editingScammer.id 
+          ? { ...scammer, ...scammerData } 
+          : scammer
+      );
+    } else {
+      // Adding new scammer
+      updatedScammers = [
+        ...scammers,
+        scammerData as ScammerData
+      ];
+    }
+    
+    setScammers(updatedScammers);
+    setFilteredScammers(updatedScammers);
+    setEditingScammer(null);
   };
 
   return (
@@ -67,7 +110,8 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers }) 
             dir="rtl"
           />
         </div>
-        <Button>
+        <Button onClick={handleAddScammer}>
+          <Plus size={18} className="mr-1" />
           إضافة محتال
         </Button>
       </div>
@@ -116,7 +160,7 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers }) 
                       <Button
                         size="sm"
                         variant="ghost"
-                        onClick={() => handleEdit(scammer.id)}
+                        onClick={() => handleEdit(scammer)}
                         className="h-8 w-8 p-0"
                       >
                         <Edit size={16} />
@@ -143,6 +187,13 @@ export const AdminScammerList: React.FC<AdminScammerListProps> = ({ scammers }) 
           </TableBody>
         </Table>
       </div>
+      
+      <ScammerForm
+        isOpen={isFormOpen}
+        onClose={() => setIsFormOpen(false)}
+        editingScammer={editingScammer}
+        onSave={handleSaveScammer}
+      />
     </div>
   );
 };

@@ -6,7 +6,7 @@ import { AdminScammerList } from '@/components/AdminScammerList';
 import { AdminReportList } from '@/components/AdminReportList';
 import { mockScammers, mockReports } from '@/lib/data';
 import { Card } from '@/components/ui/card';
-import { AlertTriangle, CheckCircle, Clock, UserX } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock, FileBarChart, ListFilter, UserCheck, UserPlus, UserX } from 'lucide-react';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('scammers');
@@ -31,7 +31,7 @@ const Admin = () => {
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in">
+          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in hover:shadow-md transition-shadow">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 flex items-center justify-center rounded-full bg-primary/10 text-primary">
                 <UserX size={24} />
@@ -43,10 +43,10 @@ const Admin = () => {
             </div>
           </Card>
           
-          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in" style={{animationDelay: '100ms'}}>
+          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in hover:shadow-md transition-shadow" style={{animationDelay: '100ms'}}>
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 flex items-center justify-center rounded-full bg-green-100 text-green-600">
-                <CheckCircle size={24} />
+                <UserCheck size={24} />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">المحتالين المتحقق منهم</p>
@@ -55,7 +55,7 @@ const Admin = () => {
             </div>
           </Card>
           
-          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in" style={{animationDelay: '200ms'}}>
+          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in hover:shadow-md transition-shadow" style={{animationDelay: '200ms'}}>
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 flex items-center justify-center rounded-full bg-amber-100 text-amber-600">
                 <Clock size={24} />
@@ -67,10 +67,10 @@ const Admin = () => {
             </div>
           </Card>
           
-          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in" style={{animationDelay: '300ms'}}>
+          <Card className="p-6 border-border/60 shadow-subtle animate-scale-in hover:shadow-md transition-shadow" style={{animationDelay: '300ms'}}>
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                <AlertTriangle size={24} />
+                <FileBarChart size={24} />
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">إجمالي البلاغات</p>
@@ -78,6 +78,31 @@ const Admin = () => {
               </div>
             </div>
           </Card>
+        </div>
+
+        {/* Quick Action Buttons */}
+        <div className="flex flex-wrap gap-3 mb-8">
+          <button 
+            className="inline-flex items-center bg-primary/10 hover:bg-primary/20 text-primary rounded-md px-4 py-2 text-sm font-medium transition-colors" 
+            onClick={() => {
+              setActiveTab('scammers');
+              // Trigger add scammer dialog after tab change
+              setTimeout(() => {
+                document.querySelector('.AdminScammerList [data-add-button="true"]')?.click();
+              }, 100);
+            }}
+          >
+            <UserPlus size={16} className="ml-1.5" />
+            إضافة محتال جديد
+          </button>
+          
+          <button 
+            className="inline-flex items-center bg-muted hover:bg-muted/80 text-muted-foreground rounded-md px-4 py-2 text-sm font-medium transition-colors"
+            onClick={() => setActiveTab('reports')}
+          >
+            <ListFilter size={16} className="ml-1.5" />
+            تصفية البلاغات
+          </button>
         </div>
 
         {/* Management Tabs */}
